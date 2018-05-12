@@ -13,6 +13,7 @@ project(braft)
 #option(EXAMPLE_LINK_SO "Whether examples are linked dynamically" OFF)
 option(BRPC_WITH_GLOG "With glog" OFF)
 option(BRPC_BUILD_SHARED "Build shared library" OFF)
+option(BRPC_BUILD_TOOLS "Build brpc tools used for debugging" OFF)
 
 set(WITH_GLOG_VAL "0")
 if(BRPC_WITH_GLOG)
@@ -71,7 +72,7 @@ foreach(PROTO ${BRAFT_PROTOS})
     get_filename_component(PROTO_WE ${PROTO} NAME_WE)
     list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/braft/${PROTO_WE}.pb.cc")
     execute_process(
-        COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ${PROTO_FLAGS}
+        COMMAND protoc ${PROTO_FLAGS}
         --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
         --proto_path=${PROTOBUF_INCLUDE_DIR}
         --proto_path=${CMAKE_SOURCE_DIR}/src
@@ -139,7 +140,10 @@ add_subdirectory(src)
 if(BUILD_UNIT_TESTS)
     add_subdirectory(test)
 endif()
-add_subdirectory(tools)
+
+if (BRPC_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif()
 
 file(COPY ${CMAKE_CURRENT_BINARY_DIR}/braft/
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/output/include/braft/
