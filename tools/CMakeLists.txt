@@ -7,6 +7,13 @@ add_executable(braft_cli braft_cli.cpp)
 target_link_libraries(braft_cli 
                       "-Xlinker \"-(\""
                       braft-static
-                      ${DYNAMIC_LIB}
+                      brpc::brpc
+                      gflags
+                      leveldb::leveldb
+                      ${CMAKE_THREAD_LIBS_INIT}
                       "-Xlinker \"-)\""
                       )
+
+if (BRPC_WITH_GLOG)
+    target_link_libraries(braft_cli glog::glog)
+endif()
