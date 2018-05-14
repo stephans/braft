@@ -72,7 +72,7 @@ foreach(PROTO ${BRAFT_PROTOS})
     get_filename_component(PROTO_WE ${PROTO} NAME_WE)
     list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/braft/${PROTO_WE}.pb.cc")
     execute_process(
-        COMMAND protoc ${PROTO_FLAGS}
+        COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ${PROTO_FLAGS}
         --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
         --proto_path=${PROTOBUF_INCLUDE_DIR}
         --proto_path=${CMAKE_SOURCE_DIR}/src
