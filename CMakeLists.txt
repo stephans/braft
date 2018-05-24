@@ -21,7 +21,6 @@ if(BRPC_WITH_GLOG)
 endif()
 
 include(FindThreads)
-include(FindProtobuf)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # require at least gcc 4.8
