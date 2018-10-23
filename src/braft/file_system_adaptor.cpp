@@ -32,7 +32,7 @@ bool PosixDirReader::next() {
     return rc;
 }
 
-const char* PosixDirReader::name() const {
+const char* PosixDirReader::name() {
     return _dir_reader.name();
 }
 

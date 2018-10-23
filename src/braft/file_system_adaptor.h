@@ -48,7 +48,7 @@ public:
     virtual bool next() = 0;
 
     // Get the name of current entry
-    virtual const char* name() const = 0;
+    virtual const char* name() = 0;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DirReader);
@@ -159,7 +159,7 @@ public:
     virtual bool next();
 
     // Get the name of current entry
-    virtual const char* name() const;
+    virtual const char* name();
 
 protected:
     PosixDirReader(const std::string& path) : _dir_reader(path.c_str()) {}
