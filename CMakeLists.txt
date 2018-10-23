@@ -1,18 +1,25 @@
-cmake_minimum_required(VERSION 2.8.10)
-project(braft C CXX)
+cmake_minimum_required(VERSION 3.5)
+
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+include(HunterGate)
+HunterGate(
+           URL "https://github.com/ambroff/hunter/archive/2bc5cbb9c118784a081ef783a84a9206a0616f58.zip"
+               SHA1 8510f9445a50e0534c81bc5a268010054129ac2a
+               )
+
+project(braft)
 
 #option(EXAMPLE_LINK_SO "Whether examples are linked dynamically" OFF)
 option(BRPC_WITH_GLOG "With glog" OFF)
+option(BRAFT_BUILD_TOOLS "Build brpc tools used for debugging" OFF)
 
 set(WITH_GLOG_VAL "0")
 if(BRPC_WITH_GLOG)
     set(WITH_GLOG_VAL "1")
 endif()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 include(FindThreads)
-include(FindProtobuf)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # require at least gcc 4.8
@@ -31,26 +38,27 @@ else()
     message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
 endif()
 
-find_path(LEVELDB_INCLUDE_PATH NAMES leveldb/db.h)
-find_library(LEVELDB_LIB NAMES leveldb)
-if ((NOT LEVELDB_INCLUDE_PATH) OR (NOT LEVELDB_LIB))
-    message(FATAL_ERROR "Fail to find leveldb")
-endif()
+hunter_add_package(ZLIB)
+find_package(ZLIB CONFIG REQUIRED)
 
-find_path(GFLAGS_INCLUDE_PATH NAMES gflags/gflags.h)
-find_library(GFLAGS_LIB NAMES gflags)
-if ((NOT GFLAGS_INCLUDE_PATH) OR (NOT GFLAGS_LIB))
-    message(FATAL_ERROR "Fail to find gflags")
-endif()
+hunter_add_package(leveldb)
+find_package(leveldb CONFIG REQUIRED)
+
+hunter_add_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 
 if(BRPC_WITH_GLOG)
-    find_path(GLOG_INCLUDE_PATH NAMES glog/logging.h)
-    find_library(GLOG_LIB NAMES glog)
-    if((NOT GLOG_INCLUDE_PATH) OR (NOT GLOG_LIB))
-        message(FATAL_ERROR "Fail to find glog")
-    endif()
-    include_directories(${GLOG_INCLUDE_PATH})
+  hunter_add_package(glog)
+  find_package(glog CONFIG REQUIRED)
 endif()
+
+hunter_add_package(Protobuf)
+find_package(Protobuf CONFIG REQUIRED)
+
+hunter_add_package(brpc)
+find_package(brpc REQUIRED)
+
+get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION_RELEASE)
 
 find_path(BRPC_INCLUDE_PATH NAMES brpc/server.h)
 find_library(BRPC_LIB NAMES libbrpc.a brpc)
@@ -135,6 +143,10 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+hunter_add_package(gflags)
+find_package(gflags CONFIG REQUIRED)
+get_target_property(GFLAGS_INCLUDE_PATH gflags INTERFACE_INCLUDE_DIRECTORIES)
+
 execute_process(
     COMMAND bash -c "grep \"namespace [_A-Za-z0-9]\\+ {\" ${GFLAGS_INCLUDE_PATH}/gflags/gflags_declare.h | head -1 | awk '{print $2}' | tr -d '\n'"
     OUTPUT_VARIABLE GFLAGS_NS
@@ -173,7 +185,10 @@ add_subdirectory(src)
 if(BUILD_UNIT_TESTS)
     add_subdirectory(test)
 endif()
-add_subdirectory(tools)
+
+if (BRAFT_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif()
 
 file(COPY ${CMAKE_CURRENT_BINARY_DIR}/braft/
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/output/include/braft/
