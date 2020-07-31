@@ -21,7 +21,7 @@ runcmd(){
 
 echo "build combination: PURPOSE=$PURPOSE CXX=$CXX CC=$CC"
 
-rm -rf build && mkdir build && cd build
+rm -rf bld && mkdir bld && cd bld
 if [ "$PURPOSE" = "compile" ]; then
     if ! cmake ..; then
         echo "Fail to generate Makefile by cmake"
@@ -34,6 +34,4 @@ elif [ "$PURPOSE" = "unittest" ]; then
         exit 1
     fi
     make -j4 && cd test && sh ../../test/run_tests.sh && cd ../
-else
-    echo "Unknown purpose=\"$PURPOSE\""
 fi

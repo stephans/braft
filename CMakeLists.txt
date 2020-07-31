@@ -4,19 +4,29 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 include(HunterGate)
 HunterGate(
-           URL "https://github.com/ambroff/hunter/archive/2bc5cbb9c118784a081ef783a84a9206a0616f58.zip"
-               SHA1 8510f9445a50e0534c81bc5a268010054129ac2a
+           URL "https://github.com/hzxa21/hunter/archive/0c563ff7482005512bb4bb25fc5065a59a39b154.zip"
+               SHA1 c68b9b460deee661e2aeb5bb59c1eb3c0f8587a2
                )
 
 project(braft)
 
+SET(CPACK_GENERATOR "DEB")
+SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "braft authors") #required
+
+INCLUDE(CPack)
+
 #option(EXAMPLE_LINK_SO "Whether examples are linked dynamically" OFF)
 option(BRPC_WITH_GLOG "With glog" OFF)
 option(BRAFT_BUILD_TOOLS "Build brpc tools used for debugging" OFF)
+option(WITH_DEBUG_SYMBOLS "With debug symbols" ON)
 
 set(WITH_GLOG_VAL "0")
 if(BRPC_WITH_GLOG)
     set(WITH_GLOG_VAL "1")
+endif()
+
+if(WITH_DEBUG_SYMBOLS)
+    set(DEBUG_SYMBOL "-g")
 endif()
 
 include(FindThreads)
@@ -59,6 +69,9 @@ hunter_add_package(brpc)
 find_package(brpc REQUIRED)
 
 get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION_RELEASE)
+if(LEVELDB_WITH_SNAPPY)
+    find_library(SNAPPY_LIB NAMES snappy)
+endif()
 
 find_path(BRPC_INCLUDE_PATH NAMES brpc/server.h)
 find_library(BRPC_LIB NAMES libbrpc.a brpc)
@@ -71,11 +84,20 @@ if (NOT PROTOBUF_PROTOC_EXECUTABLE)
     set (PROTOBUF_PROTOC_EXECUTABLE "${PROTO_LIB_DIR}/../bin/protoc")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(OPENSSL_ROOT_DIR
+        "/usr/local/opt/openssl"    # Homebrew installed OpenSSL
+        )
+endif()
+
+include(FindOpenSSL)
+
 include_directories(
         ${GFLAGS_INCLUDE_PATH}
         ${PROTOBUF_INCLUDE_DIRS}
         ${LEVELDB_INCLUDE_PATH}
         ${BRPC_INCLUDE_PATH}
+        ${OPENSSL_INCLUDE_DIR}
         )
 
 if(BRPC_WITH_GLOG)
@@ -86,9 +108,8 @@ if(BRPC_WITH_GLOG)
         ${PROTOBUF_LIBRARY}
         ${LEVELDB_LIB}
         ${CMAKE_THREAD_LIBS_INIT}
-        rt
-        ssl
-        crypto
+        ${OPENSSL_LIBRARIES}
+        ${OPENSSL_CRYPTO_LIBRARY}
         dl
         z
         )
@@ -99,12 +120,36 @@ else()
         ${PROTOBUF_LIBRARY}
         ${LEVELDB_LIB}
         ${CMAKE_THREAD_LIBS_INIT}
-        rt
-        ssl
-        crypto
+        ${OPENSSL_LIBRARIES}
+        ${OPENSSL_CRYPTO_LIBRARY}
         dl
         z
 	)
+endif()
+
+if(LEVELDB_WITH_SNAPPY)
+    set(DYNAMIC_LIB ${DYNAMIC_LIB}
+        ${SNAPPY_LIB}
+	)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(DYNAMIC_LIB ${DYNAMIC_LIB}
+        pthread
+        "-framework CoreFoundation"
+        "-framework CoreGraphics"
+        "-framework CoreData"
+        "-framework CoreText"
+        "-framework Security"
+        "-framework Foundation"
+        "-Wl,-U,_MallocExtension_ReleaseFreeMemory"
+        "-Wl,-U,_ProfilerStart"
+        "-Wl,-U,_ProfilerStop"
+        )
+else()
+    set(DYNAMIC_LIB ${DYNAMIC_LIB}
+        rt
+        )
 endif()
 
 # for *.so
@@ -112,7 +157,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/lib)
 # for *.a
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output/lib)
 
-file(GLOB BRAFT_PROTOS "${CMAKE_SOURCE_DIR}/src/braft/*.proto")
+file(GLOB BRAFT_PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/src/braft/*.proto")
 foreach(PROTO ${BRAFT_PROTOS})
     get_filename_component(PROTO_WE ${PROTO} NAME_WE)
     list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/braft/${PROTO_WE}.pb.cc")
@@ -120,8 +165,8 @@ foreach(PROTO ${BRAFT_PROTOS})
         COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ${PROTO_FLAGS}
         --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
         --proto_path=${PROTOBUF_INCLUDE_DIR}
-        --proto_path=${CMAKE_SOURCE_DIR}/src
-        --proto_path=${CMAKE_SOURCE_DIR}/src/braft/ ${PROTO}
+        --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src
+        --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/braft/ ${PROTO}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         ERROR_VARIABLE PROTO_ERROR
         RESULT_VARIABLE PROTO_RESULT
@@ -132,14 +177,14 @@ foreach(PROTO ${BRAFT_PROTOS})
     endif()
 endforeach()
 
-file(GLOB_RECURSE BRAFT_SOURCES "${CMAKE_SOURCE_DIR}/src/braft/*.cpp")
+file(GLOB_RECURSE BRAFT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/braft/*.cpp")
 set(SOURCES
     ${BRAFT_SOURCES}
     ${PROTO_SRCS}
     )
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -163,11 +208,19 @@ execute_process(
     OUTPUT_VARIABLE BRAFT_REVISION
 )
 
-set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -DBRPC_WITH_GLOG=${WITH_GLOG_VAL} -DGFLAGS_NS=${GFLAGS_NS}")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    include(CheckFunctionExists)
+    CHECK_FUNCTION_EXISTS(clock_gettime HAVE_CLOCK_GETTIME)
+    if(NOT HAVE_CLOCK_GETTIME)
+        set(DEFINE_CLOCK_GETTIME "-DNO_CLOCK_GETTIME_IN_MAC")
+    endif()
+endif()
+
+set(CMAKE_CPP_FLAGS "${DEFINE_CLOCK_GETTIME} -DBRPC_WITH_GLOG=${WITH_GLOG_VAL} -DGFLAGS_NS=${GFLAGS_NS}")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -DBTHREAD_USE_FAST_PTHREAD_MUTEX -D__const__= -D_GNU_SOURCE -DUSE_SYMBOLIZE -DNO_TCMALLOC -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DBRAFT_REVISION=\\\"${BRAFT_REVISION}\\\" -D__STRICT_ANSI__")
-set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -g ${DEBUG_SYMBOL}")
+set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} ${DEBUG_SYMBOL}")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -msse4 -msse4.2")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CPP_FLAGS} -O2 -pipe -Wall -W -fPIC -fstrict-aliasing -Wno-invalid-offsetof -Wno-unused-parameter -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CPP_FLAGS} -O2 -pipe -Wall -W -fPIC -fstrict-aliasing -Wno-invalid-offsetof -Wno-unused-parameter -Wno-reserved-user-defined-literal -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CPP_FLAGS} -O2 -pipe -Wall -W -fPIC -fstrict-aliasing -Wno-unused-parameter -fno-omit-frame-pointer")
 
 macro(use_cxx11)
@@ -196,7 +249,7 @@ file(COPY ${CMAKE_CURRENT_BINARY_DIR}/braft/
         PATTERN "*.h"
         PATTERN "*.hpp"
         )
-file(COPY ${CMAKE_SOURCE_DIR}/src/
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/output/include/
         FILES_MATCHING
         PATTERN "*.h"

@@ -19,6 +19,7 @@
 #define  BRAFT_FSYNC_H
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <gflags/gflags.h>
 #include "braft/storage.h"
 
@@ -30,8 +31,7 @@ inline int raft_fsync(int fd) {
     if (FLAGS_raft_use_fsync_rather_than_fdatasync) {
         return fsync(fd);
     } else {
-#if __APPLE__
-        // Darwin doesn't have fdatasync(int). This is the closest thing.
+#ifdef __APPLE__
         return fcntl(fd, F_FULLFSYNC);
 #else
         return fdatasync(fd);

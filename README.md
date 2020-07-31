@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/brpc/braft.svg?branch=master)](https://travis-ci.org/brpc/braft)
+[![Build Status](https://travis-ci.org/baidu/braft.svg?branch=master)](https://travis-ci.org/baidu/braft)
 
 ---
 
@@ -16,7 +16,7 @@ It's widely used inside Baidu to build highly-available systems, such as:
 * Compile braft with cmake
 
   ```shell
-  $ mkdir build && cd build && cmake .. && make
+  $ mkdir bld && cd bld && cmake .. && make
   ```
 
 * Play braft with [examples](./example).
