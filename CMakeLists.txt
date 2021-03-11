@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+# Use standard <Package>_ROOT variables with find_package().
+# See https://cmake.org/cmake/help/git-stage/policy/CMP0074.html
+if (POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
 include(HunterGate)
 HunterGate(
   URL "https://github.com/ambroff/hunter/archive/incubator-2020-08-27_5.zip"

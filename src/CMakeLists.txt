@@ -12,7 +12,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 add_library(braft-static STATIC ${SOURCES})
 set_property(TARGET braft-static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(braft-static
+target_link_libraries(braft-static PUBLIC
   gflags
   protobuf::libprotobuf
   leveldb::leveldb
