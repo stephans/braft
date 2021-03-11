@@ -28,7 +28,7 @@ public:
         return false;
     }
 
-    virtual const char* name() const {
+    virtual const char* name() {
         return _names[_pos - 1].c_str();
     }
 
