@@ -23,7 +23,7 @@ target_link_libraries(braft-static PUBLIC
   )
 
 if (BRPC_WITH_GLOG)
-  target_link_libraries(braft-static glog::glog)
+  target_link_libraries(braft-static PUBLIC glog::glog)
 endif()
 
 set_target_properties(braft-static PROPERTIES OUTPUT_NAME braft CLEAN_DIRECT_OUTPUT ON)
