@@ -9,10 +9,11 @@ if (POLICY CMP0074)
 endif()
 
 include(HunterGate)
+include(HunterGate)
 HunterGate(
-  URL "https://github.com/ambroff/hunter/archive/incubator-2020-08-27_5.zip"
-  SHA1 "e535ca49fd1a7fd70a71197978fc224577b86854"
-  LOCAL
+        URL "https://github.com/ambroff/hunter/archive/incubator-2021-07-13_1.zip"
+        SHA1 "e72edabdce66e3fb5462cfbeade08822cec83d71"
+        LOCAL
 )
 
 project(braft)

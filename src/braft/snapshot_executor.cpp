@@ -114,7 +114,6 @@ SnapshotExecutor::~SnapshotExecutor() {
 void SnapshotExecutor::do_snapshot(Closure* done) {
     std::unique_lock<raft_mutex_t> lck(_mutex);
     int64_t saved_last_snapshot_index = _last_snapshot_index;
-    int64_t saved_last_snapshot_term = _last_snapshot_term;
     if (_stopped) {
         lck.unlock();
         if (done) {

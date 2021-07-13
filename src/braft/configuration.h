@@ -44,7 +44,6 @@ struct PeerId {
     PeerId(butil::EndPoint addr_, int idx_) : addr(addr_), idx(idx_) {}
     /*intended implicit*/PeerId(const std::string& str) 
     { CHECK_EQ(0, parse(str)); }
-    PeerId(const PeerId& id) : addr(id.addr), idx(id.idx) {}
 
     void reset() {
         addr.ip = butil::IP_ANY;
