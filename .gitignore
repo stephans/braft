@@ -31,3 +31,5 @@ compile_commands.json
 CTestTestfile.cmake
 /build
 /third-party
+
+/cmake-build-*/
