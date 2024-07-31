@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
-include(HunterGate)
-HunterGate(
-           URL "https://github.com/hzxa21/hunter/archive/0c563ff7482005512bb4bb25fc5065a59a39b154.zip"
-               SHA1 c68b9b460deee661e2aeb5bb59c1eb3c0f8587a2
-               )
+option(WITH_HUNTER "With hunter" OFF)
+
+if(WITH_HUNTER)
+  include(HunterGate)
+  HunterGate(
+    URL "https://github.com/hzxa21/hunter/archive/0c563ff7482005512bb4bb25fc5065a59a39b154.zip"
+    SHA1 c68b9b460deee661e2aeb5bb59c1eb3c0f8587a2
+  )
 
 project(braft)
 
@@ -46,26 +49,30 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     endif()
 else()
     message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
+  endif()
+
+if(WITH_HUNTER)
+  hunter_add_package(ZLIB)
+  hunter_add_package(leveldb)
+  hunter_add_package(OpenSSL)
+  hunter_add_package(glog)
+  hunter_add_package(Protobuf)
+  hunter_add_package(brpc)
+  hunter_add_package(gflags)
 endif()
 
-hunter_add_package(ZLIB)
 find_package(ZLIB CONFIG REQUIRED)
 
-hunter_add_package(leveldb)
 find_package(leveldb CONFIG REQUIRED)
 
-hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
 
 if(BRPC_WITH_GLOG)
-  hunter_add_package(glog)
   find_package(glog CONFIG REQUIRED)
 endif()
 
-hunter_add_package(Protobuf)
 find_package(Protobuf CONFIG REQUIRED)
 
-hunter_add_package(brpc)
 find_package(brpc REQUIRED)
 
 get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION_RELEASE)
@@ -188,7 +195,6 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-hunter_add_package(gflags)
 find_package(gflags CONFIG REQUIRED)
 get_target_property(GFLAGS_INCLUDE_PATH gflags INTERFACE_INCLUDE_DIRECTORIES)
 
