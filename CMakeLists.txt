@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 include(HunterGate)
 HunterGate(
-           URL "https://github.com/hzxa21/hunter/archive/0c563ff7482005512bb4bb25fc5065a59a39b154.zip"
-               SHA1 c68b9b460deee661e2aeb5bb59c1eb3c0f8587a2
-               )
+  URL "https://github.com/ambroff/hunter/archive/refs/tags/main-2024.8.5.2.tar.gz"
+  SHA1 "8bc7ee5d1e5eb5e232caea6da45e6b4e74672cba"
+  LOCAL
+  )
 
 project(braft)
 
@@ -222,17 +224,6 @@ set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} ${DEBUG_SYMBOL}")
 set(CMAKE_CPP_FLAGS "${CMAKE_CPP_FLAGS} -msse4 -msse4.2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CPP_FLAGS} -O2 -pipe -Wall -W -fPIC -fstrict-aliasing -Wno-invalid-offsetof -Wno-unused-parameter -Wno-reserved-user-defined-literal -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CPP_FLAGS} -O2 -pipe -Wall -W -fPIC -fstrict-aliasing -Wno-unused-parameter -fno-omit-frame-pointer")
-
-macro(use_cxx11)
-if(CMAKE_VERSION VERSION_LESS "3.1.3")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-else()
-    set(CMAKE_CXX_STANDARD 11)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-endmacro(use_cxx11)
-
-use_cxx11()
 
 add_subdirectory(src)
 if(BUILD_UNIT_TESTS)
